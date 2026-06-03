@@ -1,0 +1,157 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import jarque_bera
+
+class AdultEDA:
+    
+    def __init__(self, df):
+        self.df = df.copy()
+    
+    # ----------------------------
+    # 1. INFO BASE
+    #    stampa la forma, i dtypes, la head e la tail del dataset
+    #    fornisce informazioni descritte del dataset
+    # ----------------------------
+    def overview(self):
+        print("Shape:", self.df.shape)
+        print("\nInfo:")
+        print(self.df.info())
+        print("\nFirst rows:")
+        print(self.df.head())
+        print("\nLast rows:")
+        print(self.df.tail())
+    
+    # ----------------------------
+    # 2. MISSING VALUES
+    #    controlla se sono presenti dei missing values in tutto il dataset
+    #    questi valori, identificati con "?", vengono convertiti in NaN
+    # ----------------------------
+    def check_missing(self):
+        missing = self.df.isnull().sum()
+        missing = missing[missing > 0]
+        
+        if missing.empty:
+            print("Nessun missing value trovato.")
+        else:
+            print("Missing values per colonna:")
+            print(missing)
+    
+    def convert_missing(self, symbol="?"):
+        self.df = self.df.replace(symbol, np.nan)
+        self.df = self.df.replace(f" {symbol}", np.nan)
+        print("Missing values convertiti in NaN.")
+    
+    # ----------------------------
+    # 3. DUPLICATI
+    #    controlla se esistono delle righe duplicate nel dataset
+    #    nel caso dovessero esistere le va a rimuovere
+    # ----------------------------
+    def remove_duplicates(self):
+        before = self.df.shape[0]
+        self.df = self.df.drop_duplicates()
+        after = self.df.shape[0]
+        print(f"Duplicati trovati e rimossi: {before - after}")
+    
+    # ----------------------------
+    # 4. OUTLIERS (IQR METHOD)
+    #    in questa sezione vengono gestiti gli outliers per una certa colonna
+    #    essi possono essere:
+    #      -> contati e mostrata a schermo la loro percentuale rispetto all'interezza del dataset (detect_outliers)
+    #      -> rimossi per colonna (remove_outliers)
+    # ----------------------------
+    def detect_outliers(self, column):
+        Q1 = self.df[column].quantile(0.25)
+        Q3 = self.df[column].quantile(0.75)
+        IQR = Q3 - Q1
+        
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+        
+        outliers = self.df[
+            (self.df[column] < lower) |
+            (self.df[column] > upper)
+        ]
+        
+        print(f"Outliers in {column}: {len(outliers)}")
+        count_outliers = len(outliers)
+        total = len(self.df)
+        perc_outliers = (count_outliers / total) * 100
+        print(f"Outliers percentage: {perc_outliers:.2f}%")
+    
+    def remove_outliers(self, column):
+        Q1 = self.df[column].quantile(0.25)
+        Q3 = self.df[column].quantile(0.75)
+        IQR = Q3 - Q1
+        
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+        
+        self.df = self.df[
+            (self.df[column] >= lower) &
+            (self.df[column] <= upper)
+        ]
+        
+        print(f"Outliers rimossi da {column}")
+    
+    # ----------------------------
+    # 5. DISTRIBUZIONE (sezione ancora da vedere bene e comprenderne i concetti)
+    # ----------------------------
+    def skewness(self):
+        numeric = self.df.select_dtypes(include='number')
+        print(numeric.skew().sort_values(ascending=False))
+
+
+    def kurtosis(self):
+        numeric = self.df.select_dtypes(include='number')
+        print(numeric.kurtosis().sort_values(ascending=False))
+
+    def jarque_bera_test(self):
+      numeric = self.df.select_dtypes(include='number')
+      results = {}
+      for col in numeric.columns:
+          stat, p = jarque_bera(numeric[col].dropna())
+          results[col] = {
+              "statistic": stat,
+              "p_value": p,
+              "normal": p > 0.05
+          }
+      return results
+
+    # ----------------------------
+    # 6. PLOTS (da migliorare e rendere agibile anche ai dati non numerici)
+    #    mostra la distribuzione dei dati all'interno di ogni colonna numerica
+    # ----------------------------
+
+    def plot_distribution(self, column):
+      sns.histplot(self.df[column], kde=True)
+      plt.show()
+    
+    # ----------------------------
+    # 7. GET DATA
+    #    ritorna il dataset
+    # ----------------------------
+    def get_data(self):
+        return self.df
+
+eda = AdultEDA(df)
+
+# tests su eda
+
+# eda.overview()
+eda.convert_missing()
+eda.check_missing()
+eda.remove_duplicates()
+
+# eda.detect_outliers("hours-per-week")
+
+# clean_df = eda.get_data()
+# clean_df
+
+# eda.skewness()
+# eda.kurtosis()
+# eda.jarque_bera_test()
+
+
+# eda.plot_distribution("hours-per-week")
