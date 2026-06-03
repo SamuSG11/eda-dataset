@@ -1,0 +1,18 @@
+from ucimlrepo import fetch_ucirepo, list_available_datasets
+import pandas as pd
+
+adult = fetch_ucirepo(id=2)
+
+# features e target
+# le prime 14 colonne sono quelle di features
+# l'ultima colonna (data_income) è quella di target
+X = adult.data.features
+y = adult.data.targets
+
+# combino le 15 colonne in un unico dataframe
+df = pd.concat([X, y], axis=1)
+
+# stampo le prime 10 righe per osservare il dataset
+ah = df.head(20)
+
+print(ah)
